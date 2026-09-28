@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divisão com Reagrupamento</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        math: ['Lora', 'Cambria Math', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        /* Container da Conta Matemática - Espaçamento extra no topo para os números de empréstimo */
+        #math-board {
+            display: grid;
+            column-gap: 0.15rem;
+            row-gap: 0; /* Removido o gap vertical para juntar mais os números */
+            justify-items: center;
+            align-items: center;
+            padding: 3rem 2rem 2rem 2rem; 
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Célula Numérica Base */
+        .math-cell {
+            width: 2.5rem;
+            height: 2.5rem; /* Altura reduzida para uma conta mais compacta */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.4s ease;
+            position: relative; /* CRÍTICO: Permite posicionar os elementos de empréstimo */
+        }
+
+        /* Chave da Divisão */
+        .chave-left {
+            border-left: 2px solid #1e293b;
+            padding-left: 0.25rem;
+        }
+        .chave-bottom {
+            border-bottom: 2px solid #1e293b;
+        }
+
+        /* Traço de Subtração */
+        .subtraction-line {
+            height: 2px;
+            background-color: #1e293b;
+            width: 100%;
+            margin: 0.25rem 0; /* Margens balanceadas para não afastar os números */
+        }
+
+        
+        /* Número riscado (que emprestou) */
+        .crossed-out {
+            color: #cbd5e1 !important; /* Cinza claro para ofuscar o original */
+        }
+        .crossed-out::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background-color: #ef4444; /* Linha vermelha cortando */
+            transform: rotate(-25deg);
+            z-index: 10;
+            animation: slash 0.3s ease-out forwards;
+        }
+
+        /* Valor decrementado posicionado acima */
+        .borrow-val {
+            position: absolute;
+            top: -1.4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.1rem;
+            color: #ef4444;
+            font-weight: 700;
+            z-index: 20;
+        }
+
+        /* O '1' posicionado ao lado do número que recebeu o empréstimo */
+        .received-borrow {
+            position: absolute;
+            top: 0.1rem;
+            left: -0.2rem;
+            font-size: 1rem;
+            color: #ef4444;
+            font-weight: 700;
+            z-index: 20;
+        }
+
+        /* Animações Gerais */
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        .slide-down { animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slash { from { width: 0; left: 50%; } to { width: 80%; left: 10%; } }
+
+        /* Realce amarelo para passos didáticos */
+        .highlight {
+            background-color: #fef08a;
+            border-radius: 0.375rem;
+            color: #854d0e !important;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <div class="max-w-5xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        <header class="bg-indigo-900 text-white p-8 text-center">
+            <h1 class="text-3xl font-bold tracking-tight mb-2">
+                Divisão com Reagrupamento
+            </h1>
+            <p class="text-indigo-200 font-medium">Veja o algoritmo da divisão e as subtrações detalhadas passo a passo.</p>
+        </header>
+
+        <main class="p-8">
+            <!-- Entradas de Divisão -->
+            <div class="flex flex-col sm:flex-row items-end justify-center gap-6 mb-10 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label for="dividendo" class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Dividendo</label>
+                    <input type="number" id="dividendo" min="0" placeholder="Ex: 312" 
+                           class="w-full sm:w-48 text-center text-3xl p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                </div>
+                
+                <div class="text-4xl text-slate-400 font-light pb-3 hidden sm:block">÷</div>
+                
+                <div class="flex flex-col w-full sm:w-auto">
+                    <label for="divisor" class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Divisor</label>
+                    <input type="number" id="divisor" min="1" placeholder="Ex: 4" 
+                           class="w-full sm:w-32 text-center text-3xl p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                </div>
+                
+                <button id="btn-iniciar" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-8 rounded-lg shadow-md transition-colors flex items-center justify-center">
+                    Calcular
+                </button>
+            </div>
+
+            <!-- Área de Resolução -->
+            <div id="workspace" class="hidden flex-col items-center">
+                
+                <!-- Caixa Pedagógica -->
+                <div id="instruction-box" class="w-full bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-6 mb-8 text-center text-lg font-medium shadow-sm transition-all duration-300 min-h-[6rem] flex flex-col items-center justify-center leading-relaxed">
+                    Aguardando início...
+                </div>
+
+                <div class="w-full overflow-x-auto pb-6">
+                    <div id="math-board" class="font-math text-slate-900 font-medium">
+                        <!-- O Grid é injetado aqui -->
+                    </div>
+                </div>
+
+                <div class="flex justify-center mt-6">
+                    <button id="btn-next" class="bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 px-10 rounded-xl shadow-lg transition-colors flex items-center transform hover:scale-105 active:scale-95">
+                        Avançar Etapa <i class="fa-solid fa-arrow-right ml-3"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const inputDividendo = document.getElementById('dividendo');
+        const inputDivisor = document.getElementById('divisor');
+        const btnIniciar = document.getElementById('btn-iniciar');
+        const workspace = document.getElementById('workspace');
+        const mathBoard = document.getElementById('math-board');
+        const btnNext = document.getElementById('btn-next');
+        const instructionBox = document.getElementById('instruction-box');
+
+        let dividendoStr = "";
+        let divisorNum = 0;
+        let algorithmSteps = [];
+        let currentStepIndex = 0;
+        
+        // Coordenadas da Grade Matemática
+        let numColsDividend = 0;
+        let colOffset = 1; // Coluna 1 para sinal de menos
+        let currentRow = 2; // Linha 1 = Dividendo. Linha 2 = Primeira Subtração e Quociente. (Evita linha em branco!)
+        let lastRemainderRow = 1;
+        let currentQuotientCol = 0;
+
+        function generateAlgorithmSteps(dividend, divisor) {
+            let steps = [];
+            let divStr = dividend.toString();
+            let currentStr = "";
+            let quotientStr = "";
+            let i = 0;
+            
+            while (i < divStr.length) {
+                currentStr += divStr[i];
+                if (parseInt(currentStr) >= divisor) break;
+                if (i === divStr.length - 1) break;
+                i++;
+            }
+            
+            while (i < divStr.length) {
+                let valueToDivide = parseInt(currentStr);
+                let qDigit = Math.floor(valueToDivide / divisor);
+                let subtrahend = qDigit * divisor;
+                let remainder = valueToDivide - subtrahend;
+                
+                quotientStr += qDigit.toString();
+                
+                // Passo 1: Mostrar Quociente e Subtraendo
+                steps.push({
+                    action: 'DIVIDE_MULT',
+                    currentValue: currentStr, 
+                    quotientDigit: qDigit,            
+                    subtrahend: subtrahend,           
+                    endIndex: i
+                });
+                
+                // Passo 2: Efetuar Subtração (Onde o empréstimo acontece visualmente)
+                steps.push({
+                    action: 'SUBTRACT',
+                    minuend: currentStr,
+                    subtrahend: subtrahend,
+                    remainder: remainder,
+                    endIndex: i
+                });
+                
+                // Passo 3: Descer o próximo número
+                if (i + 1 < divStr.length) {
+                    let nextDigit = divStr[i + 1];
+                    let formedStr = remainder.toString() + nextDigit;
+                    
+                    // Tratamento de zeros à esquerda para a lógica matemática
+                    if(formedStr.length > 1 && formedStr.startsWith("0") && parseInt(formedStr) !== 0) {
+                        formedStr = parseInt(formedStr).toString();
+                    } else if (formedStr.match(/^0+$/)) {
+                        formedStr = "0";
+                    }
+
+                    steps.push({
+                        action: 'BRING_DOWN',
+                        digitDropped: nextDigit,
+                        endIndex: i + 1,
+                        newFormedValue: formedStr
+                    });
+                    currentStr = formedStr;
+                } else {
+                    currentStr = remainder.toString();
+                }
+                i++;
+            }
+            steps.push({ action: 'FINISH', finalRemainder: parseInt(currentStr), finalQuotient: quotientStr });
+            return steps;
+        }
+
+        function createGridCell(content, row, col, extraClasses = "", id = "") {
+            const cell = document.createElement('div');
+            cell.className = `math-cell opacity-0 ${extraClasses}`;
+            cell.style.gridRow = row;
+            cell.style.gridColumn = col;
+            cell.textContent = content;
+            if (id) cell.id = id;
+            mathBoard.appendChild(cell);
+            return cell;
+        }
+
+        function createGridLine(row, startCol, endCol) {
+            const lineContainer = document.createElement('div');
+            lineContainer.style.gridRow = row;
+            lineContainer.style.gridColumn = `${startCol} / span ${endCol - startCol + 1}`;
+            lineContainer.className = "w-full flex items-center opacity-0 fade-in";
+            
+            const line = document.createElement('div');
+            line.className = "subtraction-line";
+            lineContainer.appendChild(line);
+            mathBoard.appendChild(lineContainer);
+            
+            return lineContainer;
+        }
+
+        function updateInstruction(htmlMessage, type = 'default') {
+            instructionBox.innerHTML = htmlMessage;
+            instructionBox.className = "w-full rounded-xl p-6 mb-8 text-center text-lg font-medium shadow-sm transition-all duration-300 min-h-[6rem] flex flex-col items-center justify-center leading-relaxed fade-in ";
+            
+            if (type === 'action') {
+                instructionBox.className += "bg-amber-50 border border-amber-300 text-amber-900";
+            } else if (type === 'success') {
+                instructionBox.className += "bg-emerald-50 border border-emerald-300 text-emerald-900";
+            } else {
+                instructionBox.className += "bg-blue-50 border border-blue-200 text-blue-900";
+            }
+        }
+
+        function markCellBorrowFrom(row, col, newVal) {
+            let cell = document.getElementById(`cell-${row}-${col}`);
+            if (cell) {
+                cell.classList.add('crossed-out');
+                let span = document.createElement('span');
+                span.className = 'borrow-val fade-in';
+                span.textContent = newVal;
+                cell.appendChild(span);
+            }
+        }
+
+        function markCellBorrowTo(row, col) {
+            let cell = document.getElementById(`cell-${row}-${col}`);
+            if (cell) {
+                let span = document.createElement('span');
+                span.className = 'received-borrow fade-in';
+                span.textContent = '1';
+                cell.appendChild(span);
+            }
+        }
+
+        function blockButtonForAnimation(ms) {
+            btnNext.disabled = true;
+            btnNext.classList.add('opacity-50', 'cursor-not-allowed', 'transform-none');
+            setTimeout(() => {
+                if(currentStepIndex < algorithmSteps.length) {
+                    btnNext.disabled = false;
+                    btnNext.classList.remove('opacity-50', 'cursor-not-allowed', 'transform-none');
+                }
+            }, ms);
+        }
+
+        btnIniciar.addEventListener('click', () => {
+            const valDividendo = parseInt(inputDividendo.value, 10);
+            const valDivisor = parseInt(inputDivisor.value, 10);
+
+            if (isNaN(valDividendo) || isNaN(valDivisor) || valDivisor === 0) {
+                alert("Insira números válidos. O divisor não pode ser zero.");
+                return;
+            }
+
+            btnNext.disabled = false;
+            btnNext.classList.remove('hidden', 'opacity-50', 'cursor-not-allowed');
+            
+            dividendoStr = valDividendo.toString();
+            divisorNum = valDivisor;
+            numColsDividend = dividendoStr.length;
+            
+            let divisorStr = divisorNum.toString();
+            let rightSideCols = Math.max(divisorStr.length, dividendoStr.length); 
+
+            mathBoard.innerHTML = '';
+            mathBoard.style.gridTemplateColumns = `2.5rem repeat(${numColsDividend}, 2.5rem) repeat(${rightSideCols}, 2.5rem)`;
+
+            // 1. Renderizar Dividendo (Linha 1)
+            for (let i = 0; i < dividendoStr.length; i++) {
+                let cell = createGridCell(dividendoStr[i], 1, colOffset + 1 + i, "fade-in font-bold text-slate-800", `cell-1-${colOffset + 1 + i}`);
+                cell.style.opacity = '1';
+            }
+
+            // 2. Renderizar Divisor e a "Chave"
+            for (let i = 0; i < divisorStr.length; i++) {
+                let classes = "fade-in font-bold text-slate-800 chave-bottom";
+                if (i === 0) classes += " chave-left";
+                let cell = createGridCell(divisorStr[i], 1, colOffset + numColsDividend + 1 + i, classes);
+                cell.style.opacity = '1';
+            }
+
+            if(divisorStr.length < rightSideCols) {
+                for(let i = divisorStr.length; i < rightSideCols; i++) {
+                    let emptyLineCell = createGridCell("", 1, colOffset + numColsDividend + 1 + i, "fade-in chave-bottom");
+                    emptyLineCell.style.opacity = '1';
+                }
+            }
+
+            algorithmSteps = generateAlgorithmSteps(dividendoStr, divisorNum);
+            currentStepIndex = 0;
+            currentRow = 2; // L1: Dividendo/Divisor. L2: Quociente e Subtrações. Corrigido para iniciar logo abaixo do dividendo.
+            currentQuotientCol = colOffset + numColsDividend + 1; 
+            lastRemainderRow = 1;
+
+            workspace.classList.remove('hidden');
+            workspace.classList.add('fade-in');
+            
+            updateInstruction(`<p>Vamos dividir <strong>${valDividendo}</strong> por <strong>${valDivisor}</strong>.</p><p class="mt-2 text-sm text-blue-700">Clique em "Avançar Etapa" para prosseguir.</p>`, 'default');
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (currentStepIndex >= algorithmSteps.length) return;
+            const step = algorithmSteps[currentStepIndex];
+
+            // Limpa realces antigos
+            document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+
+            if (step.action === 'DIVIDE_MULT') {
+                updateInstruction(`<p>O número <strong>${divisorNum}</strong> cabe <strong>${step.quotientDigit}</strong> vezes em <strong>${step.currentValue}</strong>.</p><p class="mt-2">Multiplicamos: ${step.quotientDigit} &times; ${divisorNum} = <strong>${step.subtrahend}</strong>.</p>`, 'action');
+
+                // Renderiza Quociente
+                let qCell = createGridCell(step.quotientDigit.toString(), 2, currentQuotientCol, "text-indigo-700 fade-in font-bold text-2xl");
+                qCell.style.opacity = '1';
+                currentQuotientCol++;
+
+                // Renderiza Subtraendo
+                let subStr = step.subtrahend.toString();
+                let endCol = colOffset + 1 + step.endIndex; 
+                let startCol = endCol - subStr.length + 1;
+                
+                let minus = createGridCell("-", currentRow, startCol - 1, "text-slate-400 fade-in text-2xl");
+                minus.style.opacity = '1';
+
+                for (let j = 0; j < subStr.length; j++) {
+                    let cell = createGridCell(subStr[subStr.length - 1 - j], currentRow, endCol - j, "text-slate-600 fade-in", `cell-${currentRow}-${endCol - j}`);
+                    cell.style.opacity = '1';
+                }
+                currentRow++;
+                createGridLine(currentRow, startCol - 1, endCol).style.opacity = '1';
+                currentRow++;
+            } 
+            else if (step.action === 'SUBTRACT') {
+                let endCol = colOffset + 1 + step.endIndex; 
+                let needsBorrow = false;
+                
+                let mArr = step.minuend.split('').map(Number);
+                let sArr = step.subtrahend.toString().padStart(mArr.length, '0').split('').map(Number);
+
+                // Verifica se haverá empréstimo
+                for (let i = mArr.length - 1; i >= 0; i--) {
+                    if (mArr[i] < sArr[i]) needsBorrow = true;
+                }
+
+                if (needsBorrow) {
+                    updateInstruction(`<p>Atenção à subtração: <strong>${step.minuend} - ${step.subtrahend}</strong>.</p><p class="mt-2 text-red-700 font-bold"><i class="fa-solid fa-arrow-right-arrow-left"></i> Precisamos pedir emprestado (Reagrupamento)!</p>`, 'action');
+                    
+                    // Executa a lógica visual do empréstimo da direita para a esquerda
+                    for (let i = mArr.length - 1; i >= 0; i--) {
+                        if (mArr[i] < sArr[i]) {
+                            let j = i - 1;
+                            // Pula os zeros (ex: 302 - 198)
+                            while (j >= 0 && mArr[j] === 0) j--;
+                            
+                            if (j >= 0) {
+                                mArr[j] -= 1;
+                                markCellBorrowFrom(lastRemainderRow, endCol - (mArr.length - 1 - j), mArr[j]);
+                                
+                                // Os zeros intermediários viram 9
+                                for (let k = j + 1; k < i; k++) {
+                                    mArr[k] = 9;
+                                    markCellBorrowFrom(lastRemainderRow, endCol - (mArr.length - 1 - k), 9);
+                                }
+                                
+                                mArr[i] += 10;
+                                markCellBorrowTo(lastRemainderRow, endCol - (mArr.length - 1 - i));
+                            }
+                        }
+                    }
+                } else {
+                    updateInstruction(`<p>Fazemos a subtração normal: <strong>${step.minuend} - ${step.subtrahend}</strong>.</p>`, 'action');
+                }
+
+                // Renderiza o resto da subtração
+                let delayMs = needsBorrow ? 1800 : 800; // Dá tempo para ver a animação do empréstimo
+                blockButtonForAnimation(delayMs);
+                
+                setTimeout(() => {
+                    let remStr = step.remainder.toString();
+                    for (let j = 0; j < remStr.length; j++) {
+                        let cell = createGridCell(remStr[remStr.length - 1 - j], currentRow, endCol - j, "text-slate-900 font-bold slide-down", `cell-${currentRow}-${endCol - j}`);
+                        cell.style.opacity = '1';
+                    }
+                    lastRemainderRow = currentRow;
+                    currentRow++;
+                    
+                    if(needsBorrow) {
+                        updateInstruction(`<p>Subtração com empréstimo concluída.</p><p class="mt-2 text-2xl font-bold">Restou ${step.remainder}.</p>`, 'default');
+                    } else {
+                         updateInstruction(`<p>Subtração concluída.</p><p class="mt-2 text-2xl font-bold">Restou ${step.remainder}.</p>`, 'default');
+                    }
+                }, delayMs - 500); // Mostra o resultado um pouco antes de liberar o botão
+
+            }
+            else if (step.action === 'BRING_DOWN') {
+                let col = colOffset + 1 + step.endIndex;
+                
+                let originalDigit = document.getElementById(`cell-1-${col}`);
+                if(originalDigit) originalDigit.classList.add('highlight');
+                
+                updateInstruction(`<p>Descemos o próximo algarismo: <strong>${step.digitDropped}</strong>.</p><p class="mt-2">O novo valor a dividir é <strong>${step.newFormedValue}</strong>.</p>`, 'default');
+
+                let cell = createGridCell(step.digitDropped, lastRemainderRow, col, "text-emerald-700 font-bold slide-down bg-emerald-50 rounded", `cell-${lastRemainderRow}-${col}`);
+                cell.style.opacity = '1';
+            }
+            else if (step.action === 'FINISH') {
+                updateInstruction(`<p class="text-2xl mb-2"><i class="fa-solid fa-check-circle text-emerald-500 mr-2"></i><strong>Conta Finalizada!</strong></p><p>O Quociente (resultado) é <strong>${step.finalQuotient}</strong> e o Resto final é <strong>${step.finalRemainder}</strong>.</p>`, 'success');
+                btnNext.classList.add('hidden');
+            }
+
+            currentStepIndex++;
+        });
+    </script>
+</body>
+</html>
