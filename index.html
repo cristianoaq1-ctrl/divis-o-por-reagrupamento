@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divisão com Reagrupamento</title>
+    <title>Cálculo de Horas com Reagrupamento</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,87 +30,87 @@
             color: #334155;
         }
 
-        /* Container da Conta Matemática - Espaçamento extra no topo para os números de empréstimo */
+        /* Container da Conta Matemática - Espaçamento extra no topo para os números de empréstimo/vai-um */
         #math-board {
             display: grid;
-            column-gap: 0.15rem;
-            row-gap: 0; /* Removido o gap vertical para juntar mais os números */
+            column-gap: 0.5rem;
+            row-gap: 0.25rem;
             justify-items: center;
             align-items: center;
-            padding: 3rem 2rem 2rem 2rem; 
+            padding: 4rem 2rem 2rem 2rem; 
             margin: 0 auto;
             background-color: #ffffff;
             border-radius: 1rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             border: 1px solid #e2e8f0;
+            grid-template-columns: 2.5rem 4rem 2rem 4rem 2rem; /* Op, H, 'h', M, 'min' */
         }
 
         /* Célula Numérica Base */
         .math-cell {
-            width: 2.5rem;
-            height: 2.5rem; /* Altura reduzida para uma conta mais compacta */
+            height: 2.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
             transition: all 0.4s ease;
             position: relative; /* CRÍTICO: Permite posicionar os elementos de empréstimo */
+            width: 100%;
         }
 
-        /* Chave da Divisão */
-        .chave-left {
-            border-left: 2px solid #1e293b;
-            padding-left: 0.25rem;
-        }
-        .chave-bottom {
-            border-bottom: 2px solid #1e293b;
+        .text-label {
+            font-size: 1.25rem;
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
         }
 
-        /* Traço de Subtração */
-        .subtraction-line {
+        /* Traço de Subtração/Soma */
+        .math-line {
             height: 2px;
             background-color: #1e293b;
             width: 100%;
-            margin: 0.25rem 0; /* Margens balanceadas para não afastar os números */
+            margin: 0.5rem 0;
+            grid-column: 1 / span 5;
         }
 
-        
-        /* Número riscado (que emprestou) */
+        /* Número riscado (que emprestou ou foi reagrupado) */
         .crossed-out {
-            color: #cbd5e1 !important; /* Cinza claro para ofuscar o original */
+            color: #cbd5e1 !important;
         }
         .crossed-out::after {
             content: '';
             position: absolute;
             top: 50%;
-            left: 10%;
-            right: 10%;
-            height: 2px;
+            left: 5%;
+            right: 5%;
+            height: 3px;
             background-color: #ef4444; /* Linha vermelha cortando */
-            transform: rotate(-25deg);
+            transform: rotate(-15deg);
             z-index: 10;
             animation: slash 0.3s ease-out forwards;
         }
 
-        /* Valor decrementado posicionado acima */
+        /* Valor alterado posicionado acima (Empréstimo ou Reagrupamento) */
         .borrow-val {
             position: absolute;
-            top: -1.4rem;
+            top: -1.8rem;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             color: #ef4444;
             font-weight: 700;
             z-index: 20;
         }
 
-        /* O '1' posicionado ao lado do número que recebeu o empréstimo */
-        .received-borrow {
+        /* O 'vai 1' na soma */
+        .carry-val {
             position: absolute;
-            top: 0.1rem;
-            left: -0.2rem;
-            font-size: 1rem;
-            color: #ef4444;
+            top: -1.8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.25rem;
+            color: #3b82f6; /* Azul para diferenciar do empréstimo */
             font-weight: 700;
             z-index: 20;
         }
@@ -118,10 +118,12 @@
         /* Animações Gerais */
         .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
         .slide-down { animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slash { from { width: 0; left: 50%; } to { width: 80%; left: 10%; } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.5) translateX(-100%); } to { opacity: 1; transform: scale(1) translateX(-50%); } }
+        @keyframes slash { from { width: 0; left: 50%; } to { width: 90%; left: 5%; } }
 
         /* Realce amarelo para passos didáticos */
         .highlight {
@@ -139,31 +141,65 @@
         
         <header class="bg-indigo-900 text-white p-8 text-center">
             <h1 class="text-3xl font-bold tracking-tight mb-2">
-                Divisão com Reagrupamento
+                Cálculo de Horas com Reagrupamento
             </h1>
-            <p class="text-indigo-200 font-medium">Veja o algoritmo da divisão e as subtrações detalhadas passo a passo.</p>
+            <p class="text-indigo-200 font-medium">Veja o algoritmo passo a passo da soma e subtração de horas (Base 60).</p>
         </header>
 
         <main class="p-8">
-            <!-- Entradas de Divisão -->
-            <div class="flex flex-col sm:flex-row items-end justify-center gap-6 mb-10 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label for="dividendo" class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Dividendo</label>
-                    <input type="number" id="dividendo" min="0" placeholder="Ex: 312" 
-                           class="w-full sm:w-48 text-center text-3xl p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+            <!-- Entradas de Horas -->
+            <div class="flex flex-col md:flex-row items-end justify-center gap-4 mb-10 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                
+                <!-- Tempo 1 -->
+                <div class="flex flex-col items-center">
+                    <label class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Tempo 1</label>
+                    <div class="flex gap-2 items-center">
+                        <div class="flex flex-col">
+                            <input type="number" id="h1" min="0" placeholder="0" value="2"
+                                class="w-16 sm:w-20 text-center text-2xl p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                            <span class="text-xs text-center text-slate-500 mt-1">h</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-bold mb-5">:</span>
+                        <div class="flex flex-col">
+                            <input type="number" id="m1" min="0" max="59" placeholder="00" value="15"
+                                class="w-16 sm:w-20 text-center text-2xl p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                            <span class="text-xs text-center text-slate-500 mt-1">min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operador -->
+                <div class="flex flex-col items-center pb-6 md:pb-5">
+                    <select id="operator" class="text-2xl p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800 font-bold cursor-pointer bg-white">
+                        <option value="-">- (Subtração)</option>
+                        <option value="+">+ (Soma)</option>
+                    </select>
+                </div>
+
+                <!-- Tempo 2 -->
+                <div class="flex flex-col items-center">
+                    <label class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Tempo 2</label>
+                    <div class="flex gap-2 items-center">
+                        <div class="flex flex-col">
+                            <input type="number" id="h2" min="0" placeholder="0" value="1"
+                                class="w-16 sm:w-20 text-center text-2xl p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                            <span class="text-xs text-center text-slate-500 mt-1">h</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-bold mb-5">:</span>
+                        <div class="flex flex-col">
+                            <input type="number" id="m2" min="0" max="59" placeholder="00" value="45"
+                                class="w-16 sm:w-20 text-center text-2xl p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                            <span class="text-xs text-center text-slate-500 mt-1">min</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="text-4xl text-slate-400 font-light pb-3 hidden sm:block">÷</div>
-                
-                <div class="flex flex-col w-full sm:w-auto">
-                    <label for="divisor" class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Divisor</label>
-                    <input type="number" id="divisor" min="1" placeholder="Ex: 4" 
-                           class="w-full sm:w-32 text-center text-3xl p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-math text-slate-800">
+                <!-- Botão -->
+                <div class="pb-6 md:pb-5 ml-0 md:ml-4 mt-4 md:mt-0 w-full md:w-auto">
+                    <button id="btn-iniciar" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors flex items-center justify-center">
+                        Calcular
+                    </button>
                 </div>
-                
-                <button id="btn-iniciar" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-8 rounded-lg shadow-md transition-colors flex items-center justify-center">
-                    Calcular
-                </button>
             </div>
 
             <!-- Área de Resolução -->
@@ -176,7 +212,7 @@
 
                 <div class="w-full overflow-x-auto pb-6">
                     <div id="math-board" class="font-math text-slate-900 font-medium">
-                        <!-- O Grid é injetado aqui -->
+                        <!-- Células geradas via JS -->
                     </div>
                 </div>
 
@@ -190,119 +226,27 @@
     </div>
 
     <script>
-        const inputDividendo = document.getElementById('dividendo');
-        const inputDivisor = document.getElementById('divisor');
         const btnIniciar = document.getElementById('btn-iniciar');
         const workspace = document.getElementById('workspace');
         const mathBoard = document.getElementById('math-board');
         const btnNext = document.getElementById('btn-next');
         const instructionBox = document.getElementById('instruction-box');
+        
+        const inputH1 = document.getElementById('h1');
+        const inputM1 = document.getElementById('m1');
+        const inputH2 = document.getElementById('h2');
+        const inputM2 = document.getElementById('m2');
+        const opSelect = document.getElementById('operator');
 
-        let dividendoStr = "";
-        let divisorNum = 0;
         let algorithmSteps = [];
         let currentStepIndex = 0;
-        
-        // Coordenadas da Grade Matemática
-        let numColsDividend = 0;
-        let colOffset = 1; // Coluna 1 para sinal de menos
-        let currentRow = 2; // Linha 1 = Dividendo. Linha 2 = Primeira Subtração e Quociente. (Evita linha em branco!)
-        let lastRemainderRow = 1;
-        let currentQuotientCol = 0;
 
-        function generateAlgorithmSteps(dividend, divisor) {
-            let steps = [];
-            let divStr = dividend.toString();
-            let currentStr = "";
-            let quotientStr = "";
-            let i = 0;
-            
-            while (i < divStr.length) {
-                currentStr += divStr[i];
-                if (parseInt(currentStr) >= divisor) break;
-                if (i === divStr.length - 1) break;
-                i++;
-            }
-            
-            while (i < divStr.length) {
-                let valueToDivide = parseInt(currentStr);
-                let qDigit = Math.floor(valueToDivide / divisor);
-                let subtrahend = qDigit * divisor;
-                let remainder = valueToDivide - subtrahend;
-                
-                quotientStr += qDigit.toString();
-                
-                // Passo 1: Mostrar Quociente e Subtraendo
-                steps.push({
-                    action: 'DIVIDE_MULT',
-                    currentValue: currentStr, 
-                    quotientDigit: qDigit,            
-                    subtrahend: subtrahend,           
-                    endIndex: i
-                });
-                
-                // Passo 2: Efetuar Subtração (Onde o empréstimo acontece visualmente)
-                steps.push({
-                    action: 'SUBTRACT',
-                    minuend: currentStr,
-                    subtrahend: subtrahend,
-                    remainder: remainder,
-                    endIndex: i
-                });
-                
-                // Passo 3: Descer o próximo número
-                if (i + 1 < divStr.length) {
-                    let nextDigit = divStr[i + 1];
-                    let formedStr = remainder.toString() + nextDigit;
-                    
-                    // Tratamento de zeros à esquerda para a lógica matemática
-                    if(formedStr.length > 1 && formedStr.startsWith("0") && parseInt(formedStr) !== 0) {
-                        formedStr = parseInt(formedStr).toString();
-                    } else if (formedStr.match(/^0+$/)) {
-                        formedStr = "0";
-                    }
-
-                    steps.push({
-                        action: 'BRING_DOWN',
-                        digitDropped: nextDigit,
-                        endIndex: i + 1,
-                        newFormedValue: formedStr
-                    });
-                    currentStr = formedStr;
-                } else {
-                    currentStr = remainder.toString();
-                }
-                i++;
-            }
-            steps.push({ action: 'FINISH', finalRemainder: parseInt(currentStr), finalQuotient: quotientStr });
-            return steps;
+        // Função auxiliar para padronizar exibição (ex: 5 -> 05)
+        function pad(num) {
+            return num.toString().padStart(2, '0');
         }
 
-        function createGridCell(content, row, col, extraClasses = "", id = "") {
-            const cell = document.createElement('div');
-            cell.className = `math-cell opacity-0 ${extraClasses}`;
-            cell.style.gridRow = row;
-            cell.style.gridColumn = col;
-            cell.textContent = content;
-            if (id) cell.id = id;
-            mathBoard.appendChild(cell);
-            return cell;
-        }
-
-        function createGridLine(row, startCol, endCol) {
-            const lineContainer = document.createElement('div');
-            lineContainer.style.gridRow = row;
-            lineContainer.style.gridColumn = `${startCol} / span ${endCol - startCol + 1}`;
-            lineContainer.className = "w-full flex items-center opacity-0 fade-in";
-            
-            const line = document.createElement('div');
-            line.className = "subtraction-line";
-            lineContainer.appendChild(line);
-            mathBoard.appendChild(lineContainer);
-            
-            return lineContainer;
-        }
-
+        // Função para atualizar a caixa de instruções
         function updateInstruction(htmlMessage, type = 'default') {
             instructionBox.innerHTML = htmlMessage;
             instructionBox.className = "w-full rounded-xl p-6 mb-8 text-center text-lg font-medium shadow-sm transition-all duration-300 min-h-[6rem] flex flex-col items-center justify-center leading-relaxed fade-in ";
@@ -316,199 +260,257 @@
             }
         }
 
-        function markCellBorrowFrom(row, col, newVal) {
-            let cell = document.getElementById(`cell-${row}-${col}`);
-            if (cell) {
-                cell.classList.add('crossed-out');
-                let span = document.createElement('span');
-                span.className = 'borrow-val fade-in';
-                span.textContent = newVal;
-                cell.appendChild(span);
-            }
+        function createGridCell(content, row, col, extraClasses = "", id = "") {
+            const cell = document.createElement('div');
+            cell.className = `math-cell opacity-0 ${extraClasses}`;
+            cell.style.gridRow = row;
+            cell.style.gridColumn = col;
+            cell.innerHTML = content; 
+            if (id) cell.id = id;
+            mathBoard.appendChild(cell);
+            return cell;
         }
 
-        function markCellBorrowTo(row, col) {
-            let cell = document.getElementById(`cell-${row}-${col}`);
-            if (cell) {
-                let span = document.createElement('span');
-                span.className = 'received-borrow fade-in';
-                span.textContent = '1';
-                cell.appendChild(span);
-            }
+        function setupInitialBoard(h1, m1, op, h2, m2) {
+            mathBoard.innerHTML = '';
+
+            // Linha 1: Tempo 1
+            let cellH1 = createGridCell(pad(h1), 1, 2, "fade-in font-bold text-slate-800", "cell-h1");
+            cellH1.style.opacity = '1';
+            let labelH1 = createGridCell("h", 1, 3, "fade-in text-label");
+            labelH1.style.opacity = '1';
+            let cellM1 = createGridCell(pad(m1), 1, 4, "fade-in font-bold text-slate-800", "cell-m1");
+            cellM1.style.opacity = '1';
+            let labelM1 = createGridCell("min", 1, 5, "fade-in text-label");
+            labelM1.style.opacity = '1';
+
+            // Linha 2: Operador e Tempo 2
+            let cellOp = createGridCell(op, 2, 1, "fade-in font-bold text-slate-400 text-3xl", "cell-op");
+            cellOp.style.opacity = '1';
+            let cellH2 = createGridCell(pad(h2), 2, 2, "fade-in font-bold text-slate-800", "cell-h2");
+            cellH2.style.opacity = '1';
+            let labelH2 = createGridCell("h", 2, 3, "fade-in text-label");
+            labelH2.style.opacity = '1';
+            let cellM2 = createGridCell(pad(m2), 2, 4, "fade-in font-bold text-slate-800", "cell-m2");
+            cellM2.style.opacity = '1';
+            let labelM2 = createGridCell("min", 2, 5, "fade-in text-label");
+            labelM2.style.opacity = '1';
+
+            // Linha 3: Traço
+            const lineContainer = document.createElement('div');
+            lineContainer.className = "math-line fade-in";
+            lineContainer.style.opacity = '1';
+            lineContainer.style.gridRow = 3;
+            mathBoard.appendChild(lineContainer);
         }
 
-        function blockButtonForAnimation(ms) {
-            btnNext.disabled = true;
-            btnNext.classList.add('opacity-50', 'cursor-not-allowed', 'transform-none');
-            setTimeout(() => {
-                if(currentStepIndex < algorithmSteps.length) {
-                    btnNext.disabled = false;
-                    btnNext.classList.remove('opacity-50', 'cursor-not-allowed', 'transform-none');
+        function clearHighlights() {
+            document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+        }
+
+        function generateSteps(h1, m1, op, h2, m2) {
+            let steps = [];
+            
+            if (op === '+') {
+                let totalM = m1 + m2;
+                let carry = 0;
+                let finalM = totalM;
+                
+                steps.push({ 
+                    action: 'EVAL_MIN_ADD', 
+                    m1, m2, totalM 
+                });
+
+                if (totalM >= 60) {
+                    carry = 1;
+                    finalM = totalM - 60;
+                    steps.push({ 
+                        action: 'CONVERT_MIN', 
+                        totalM, finalM, carry 
+                    });
+                } else {
+                    steps.push({
+                        action: 'WRITE_MIN_ADD',
+                        finalM
+                    });
                 }
-            }, ms);
+
+                let totalH = h1 + h2 + carry;
+                steps.push({ 
+                    action: 'EVAL_HOUR_ADD', 
+                    h1, h2, carry, totalH 
+                });
+                
+                steps.push({ action: 'FINISH', resH: totalH, resM: finalM, op });
+
+            } else if (op === '-') {
+                let currentH1 = h1;
+                let currentM1 = m1;
+                
+                steps.push({ action: 'CHECK_MIN_SUB', m1, m2 });
+
+                if (m1 < m2) {
+                    currentH1 = h1 - 1;
+                    currentM1 = m1 + 60;
+                    steps.push({ action: 'REGROUP', h1, newH1: currentH1, m1, newM1: currentM1 });
+                }
+
+                let resM = currentM1 - m2;
+                steps.push({ action: 'SUB_MIN', m1: currentM1, m2, resM });
+
+                let resH = currentH1 - h2;
+                steps.push({ action: 'SUB_HOUR', h1: currentH1, h2, resH });
+
+                steps.push({ action: 'FINISH', resH, resM, op });
+            }
+            return steps;
         }
 
         btnIniciar.addEventListener('click', () => {
-            const valDividendo = parseInt(inputDividendo.value, 10);
-            const valDivisor = parseInt(inputDivisor.value, 10);
+            const valH1 = parseInt(inputH1.value, 10) || 0;
+            const valM1 = parseInt(inputM1.value, 10) || 0;
+            const op = opSelect.value;
+            const valH2 = parseInt(inputH2.value, 10) || 0;
+            const valM2 = parseInt(inputM2.value, 10) || 0;
 
-            if (isNaN(valDividendo) || isNaN(valDivisor) || valDivisor === 0) {
-                alert("Insira números válidos. O divisor não pode ser zero.");
-                return;
+            // Validação de tempo negativo na subtração
+            if (op === '-') {
+                const totalMin1 = (valH1 * 60) + valM1;
+                const totalMin2 = (valH2 * 60) + valM2;
+                if (totalMin1 < totalMin2) {
+                    alert("Para subtração, o Tempo 1 deve ser maior ou igual ao Tempo 2.");
+                    return;
+                }
             }
 
             btnNext.disabled = false;
             btnNext.classList.remove('hidden', 'opacity-50', 'cursor-not-allowed');
             
-            dividendoStr = valDividendo.toString();
-            divisorNum = valDivisor;
-            numColsDividend = dividendoStr.length;
-            
-            let divisorStr = divisorNum.toString();
-            let rightSideCols = Math.max(divisorStr.length, dividendoStr.length); 
-
-            mathBoard.innerHTML = '';
-            mathBoard.style.gridTemplateColumns = `2.5rem repeat(${numColsDividend}, 2.5rem) repeat(${rightSideCols}, 2.5rem)`;
-
-            // 1. Renderizar Dividendo (Linha 1)
-            for (let i = 0; i < dividendoStr.length; i++) {
-                let cell = createGridCell(dividendoStr[i], 1, colOffset + 1 + i, "fade-in font-bold text-slate-800", `cell-1-${colOffset + 1 + i}`);
-                cell.style.opacity = '1';
-            }
-
-            // 2. Renderizar Divisor e a "Chave"
-            for (let i = 0; i < divisorStr.length; i++) {
-                let classes = "fade-in font-bold text-slate-800 chave-bottom";
-                if (i === 0) classes += " chave-left";
-                let cell = createGridCell(divisorStr[i], 1, colOffset + numColsDividend + 1 + i, classes);
-                cell.style.opacity = '1';
-            }
-
-            if(divisorStr.length < rightSideCols) {
-                for(let i = divisorStr.length; i < rightSideCols; i++) {
-                    let emptyLineCell = createGridCell("", 1, colOffset + numColsDividend + 1 + i, "fade-in chave-bottom");
-                    emptyLineCell.style.opacity = '1';
-                }
-            }
-
-            algorithmSteps = generateAlgorithmSteps(dividendoStr, divisorNum);
+            setupInitialBoard(valH1, valM1, op, valH2, valM2);
+            algorithmSteps = generateSteps(valH1, valM1, op, valH2, valM2);
             currentStepIndex = 0;
-            currentRow = 2; // L1: Dividendo/Divisor. L2: Quociente e Subtrações. Corrigido para iniciar logo abaixo do dividendo.
-            currentQuotientCol = colOffset + numColsDividend + 1; 
-            lastRemainderRow = 1;
 
             workspace.classList.remove('hidden');
             workspace.classList.add('fade-in');
             
-            updateInstruction(`<p>Vamos dividir <strong>${valDividendo}</strong> por <strong>${valDivisor}</strong>.</p><p class="mt-2 text-sm text-blue-700">Clique em "Avançar Etapa" para prosseguir.</p>`, 'default');
+            let actionName = op === '+' ? 'somar' : 'subtrair';
+            updateInstruction(`<p>Vamos ${actionName} os tempos.</p><p class="mt-2 text-sm text-blue-700">Clique em "Avançar Etapa" para prosseguir passo a passo.</p>`, 'default');
         });
 
         btnNext.addEventListener('click', () => {
             if (currentStepIndex >= algorithmSteps.length) return;
             const step = algorithmSteps[currentStepIndex];
+            clearHighlights();
 
-            // Limpa realces antigos
-            document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-
-            if (step.action === 'DIVIDE_MULT') {
-                updateInstruction(`<p>O número <strong>${divisorNum}</strong> cabe <strong>${step.quotientDigit}</strong> vezes em <strong>${step.currentValue}</strong>.</p><p class="mt-2">Multiplicamos: ${step.quotientDigit} &times; ${divisorNum} = <strong>${step.subtrahend}</strong>.</p>`, 'action');
-
-                // Renderiza Quociente
-                let qCell = createGridCell(step.quotientDigit.toString(), 2, currentQuotientCol, "text-indigo-700 fade-in font-bold text-2xl");
-                qCell.style.opacity = '1';
-                currentQuotientCol++;
-
-                // Renderiza Subtraendo
-                let subStr = step.subtrahend.toString();
-                let endCol = colOffset + 1 + step.endIndex; 
-                let startCol = endCol - subStr.length + 1;
+            // ------------- LÓGICA DE SOMA -------------
+            if (step.action === 'EVAL_MIN_ADD') {
+                document.getElementById('cell-m1').classList.add('highlight');
+                document.getElementById('cell-m2').classList.add('highlight');
                 
-                let minus = createGridCell("-", currentRow, startCol - 1, "text-slate-400 fade-in text-2xl");
-                minus.style.opacity = '1';
-
-                for (let j = 0; j < subStr.length; j++) {
-                    let cell = createGridCell(subStr[subStr.length - 1 - j], currentRow, endCol - j, "text-slate-600 fade-in", `cell-${currentRow}-${endCol - j}`);
-                    cell.style.opacity = '1';
-                }
-                currentRow++;
-                createGridLine(currentRow, startCol - 1, endCol).style.opacity = '1';
-                currentRow++;
+                updateInstruction(`<p>Começamos pela coluna dos <strong>Minutos</strong>.</p><p class="mt-2 text-xl font-bold">${step.m1} + ${step.m2} = ${step.totalM}</p>`, 'action');
             } 
-            else if (step.action === 'SUBTRACT') {
-                let endCol = colOffset + 1 + step.endIndex; 
-                let needsBorrow = false;
+            else if (step.action === 'CONVERT_MIN') {
+                // Remove destaques anteriores
+                document.getElementById('cell-m1').classList.remove('highlight');
+                document.getElementById('cell-m2').classList.remove('highlight');
+                document.getElementById('cell-h1').classList.add('highlight');
+
+                updateInstruction(`<p>Atenção! A soma deu <strong>${step.totalM} minutos</strong> (passou de 60).</p><p class="mt-2 text-blue-700 font-bold"><i class="fa-solid fa-arrow-right-arrow-left"></i> Reagrupamento: 60 min viram +1 hora. Restam ${step.finalM} min.</p>`, 'action');
+
+                // Anima o "+1" na coluna das horas
+                let cellH1 = document.getElementById('cell-h1');
+                let carrySpan = document.createElement('span');
+                carrySpan.className = 'carry-val pop-in';
+                carrySpan.textContent = '+1';
+                cellH1.appendChild(carrySpan);
+
+                // Escreve o resultado final dos minutos
+                let resM = createGridCell(pad(step.finalM), 4, 4, "text-indigo-700 font-bold slide-down", "cell-resm");
+                resM.style.opacity = '1';
+                let labelResM = createGridCell("min", 4, 5, "fade-in text-label");
+                labelResM.style.opacity = '1';
+
+            } 
+            else if (step.action === 'WRITE_MIN_ADD') {
+                updateInstruction(`<p>A soma dos minutos é menor que 60. Apenas registramos o valor.</p>`, 'default');
+                let resM = createGridCell(pad(step.finalM), 4, 4, "text-indigo-700 font-bold slide-down", "cell-resm");
+                resM.style.opacity = '1';
+                let labelResM = createGridCell("min", 4, 5, "fade-in text-label");
+                labelResM.style.opacity = '1';
+            }
+            else if (step.action === 'EVAL_HOUR_ADD') {
+                document.getElementById('cell-h1').classList.add('highlight');
+                document.getElementById('cell-h2').classList.add('highlight');
                 
-                let mArr = step.minuend.split('').map(Number);
-                let sArr = step.subtrahend.toString().padStart(mArr.length, '0').split('').map(Number);
+                let eq = step.carry > 0 ? `${step.carry} (vai um) + ${step.h1} + ${step.h2} = ${step.totalH}` : `${step.h1} + ${step.h2} = ${step.totalH}`;
+                updateInstruction(`<p>Agora somamos a coluna das <strong>Horas</strong>.</p><p class="mt-2 text-xl font-bold">${eq}</p>`, 'action');
 
-                // Verifica se haverá empréstimo
-                for (let i = mArr.length - 1; i >= 0; i--) {
-                    if (mArr[i] < sArr[i]) needsBorrow = true;
-                }
+                let resH = createGridCell(pad(step.totalH), 4, 2, "text-indigo-700 font-bold slide-down", "cell-resh");
+                resH.style.opacity = '1';
+                let labelResH = createGridCell("h", 4, 3, "fade-in text-label");
+                labelResH.style.opacity = '1';
+            }
 
-                if (needsBorrow) {
-                    updateInstruction(`<p>Atenção à subtração: <strong>${step.minuend} - ${step.subtrahend}</strong>.</p><p class="mt-2 text-red-700 font-bold"><i class="fa-solid fa-arrow-right-arrow-left"></i> Precisamos pedir emprestado (Reagrupamento)!</p>`, 'action');
-                    
-                    // Executa a lógica visual do empréstimo da direita para a esquerda
-                    for (let i = mArr.length - 1; i >= 0; i--) {
-                        if (mArr[i] < sArr[i]) {
-                            let j = i - 1;
-                            // Pula os zeros (ex: 302 - 198)
-                            while (j >= 0 && mArr[j] === 0) j--;
-                            
-                            if (j >= 0) {
-                                mArr[j] -= 1;
-                                markCellBorrowFrom(lastRemainderRow, endCol - (mArr.length - 1 - j), mArr[j]);
-                                
-                                // Os zeros intermediários viram 9
-                                for (let k = j + 1; k < i; k++) {
-                                    mArr[k] = 9;
-                                    markCellBorrowFrom(lastRemainderRow, endCol - (mArr.length - 1 - k), 9);
-                                }
-                                
-                                mArr[i] += 10;
-                                markCellBorrowTo(lastRemainderRow, endCol - (mArr.length - 1 - i));
-                            }
-                        }
-                    }
+            // ------------- LÓGICA DE SUBTRAÇÃO -------------
+            else if (step.action === 'CHECK_MIN_SUB') {
+                document.getElementById('cell-m1').classList.add('highlight');
+                document.getElementById('cell-m2').classList.add('highlight');
+                
+                if (step.m1 < step.m2) {
+                    updateInstruction(`<p>Verificando os minutos: <strong>${step.m1} - ${step.m2}</strong>.</p><p class="mt-2 text-red-600 font-bold">Não é possível! Precisaremos pedir emprestado (Reagrupar).</p>`, 'action');
                 } else {
-                    updateInstruction(`<p>Fazemos a subtração normal: <strong>${step.minuend} - ${step.subtrahend}</strong>.</p>`, 'action');
+                    updateInstruction(`<p>Verificando os minutos: <strong>${step.m1} - ${step.m2}</strong>.</p><p class="mt-2">É possível subtrair normalmente.</p>`, 'default');
                 }
-
-                // Renderiza o resto da subtração
-                let delayMs = needsBorrow ? 1800 : 800; // Dá tempo para ver a animação do empréstimo
-                blockButtonForAnimation(delayMs);
-                
-                setTimeout(() => {
-                    let remStr = step.remainder.toString();
-                    for (let j = 0; j < remStr.length; j++) {
-                        let cell = createGridCell(remStr[remStr.length - 1 - j], currentRow, endCol - j, "text-slate-900 font-bold slide-down", `cell-${currentRow}-${endCol - j}`);
-                        cell.style.opacity = '1';
-                    }
-                    lastRemainderRow = currentRow;
-                    currentRow++;
-                    
-                    if(needsBorrow) {
-                        updateInstruction(`<p>Subtração com empréstimo concluída.</p><p class="mt-2 text-2xl font-bold">Restou ${step.remainder}.</p>`, 'default');
-                    } else {
-                         updateInstruction(`<p>Subtração concluída.</p><p class="mt-2 text-2xl font-bold">Restou ${step.remainder}.</p>`, 'default');
-                    }
-                }, delayMs - 500); // Mostra o resultado um pouco antes de liberar o botão
-
             }
-            else if (step.action === 'BRING_DOWN') {
-                let col = colOffset + 1 + step.endIndex;
-                
-                let originalDigit = document.getElementById(`cell-1-${col}`);
-                if(originalDigit) originalDigit.classList.add('highlight');
-                
-                updateInstruction(`<p>Descemos o próximo algarismo: <strong>${step.digitDropped}</strong>.</p><p class="mt-2">O novo valor a dividir é <strong>${step.newFormedValue}</strong>.</p>`, 'default');
+            else if (step.action === 'REGROUP') {
+                document.getElementById('cell-h1').classList.add('highlight');
+                document.getElementById('cell-m1').classList.add('highlight');
 
-                let cell = createGridCell(step.digitDropped, lastRemainderRow, col, "text-emerald-700 font-bold slide-down bg-emerald-50 rounded", `cell-${lastRemainderRow}-${col}`);
-                cell.style.opacity = '1';
+                updateInstruction(`<p>Tiramos <strong>1 hora</strong> (${step.h1} <i class="fa-solid fa-arrow-right"></i> ${step.newH1}) e transformamos em <strong>+60 minutos</strong> (${step.m1} <i class="fa-solid fa-arrow-right"></i> ${step.newM1}).</p>`, 'action');
+
+                // Risca as horas e coloca novo valor
+                let cellH1 = document.getElementById('cell-h1');
+                cellH1.classList.add('crossed-out');
+                let hSpan = document.createElement('span');
+                hSpan.className = 'borrow-val pop-in text-red-600';
+                hSpan.textContent = pad(step.newH1);
+                cellH1.appendChild(hSpan);
+
+                // Risca os minutos e coloca novo valor
+                let cellM1 = document.getElementById('cell-m1');
+                cellM1.classList.add('crossed-out');
+                let mSpan = document.createElement('span');
+                mSpan.className = 'borrow-val pop-in text-emerald-600'; // Cor diferente para o ganho
+                mSpan.innerHTML = `<span class="text-xs absolute -top-4 -left-2 text-slate-400">+60</span>${pad(step.newM1)}`;
+                cellM1.appendChild(mSpan);
             }
+            else if (step.action === 'SUB_MIN') {
+                document.getElementById('cell-m1').classList.add('highlight');
+                document.getElementById('cell-m2').classList.add('highlight');
+
+                updateInstruction(`<p>Subtraímos os minutos: <strong>${step.m1} - ${step.m2} = ${step.resM}</strong>.</p>`, 'default');
+
+                let resM = createGridCell(pad(step.resM), 4, 4, "text-indigo-700 font-bold slide-down", "cell-resm");
+                resM.style.opacity = '1';
+                let labelResM = createGridCell("min", 4, 5, "fade-in text-label");
+                labelResM.style.opacity = '1';
+            }
+            else if (step.action === 'SUB_HOUR') {
+                document.getElementById('cell-h1').classList.add('highlight');
+                document.getElementById('cell-h2').classList.add('highlight');
+
+                updateInstruction(`<p>Subtraímos as horas: <strong>${step.h1} - ${step.h2} = ${step.resH}</strong>.</p>`, 'default');
+
+                let resH = createGridCell(pad(step.resH), 4, 2, "text-indigo-700 font-bold slide-down", "cell-resh");
+                resH.style.opacity = '1';
+                let labelResH = createGridCell("h", 4, 3, "fade-in text-label");
+                labelResH.style.opacity = '1';
+            }
+            
+            // ------------- FINALIZAÇÃO -------------
             else if (step.action === 'FINISH') {
-                updateInstruction(`<p class="text-2xl mb-2"><i class="fa-solid fa-check-circle text-emerald-500 mr-2"></i><strong>Conta Finalizada!</strong></p><p>O Quociente (resultado) é <strong>${step.finalQuotient}</strong> e o Resto final é <strong>${step.finalRemainder}</strong>.</p>`, 'success');
+                let opText = step.op === '+' ? 'Soma' : 'Subtração';
+                updateInstruction(`<p class="text-2xl mb-2"><i class="fa-solid fa-check-circle text-emerald-500 mr-2"></i><strong>${opText} Finalizada!</strong></p><p>O resultado é <strong>${step.resH}h e ${step.resM}min</strong>.</p>`, 'success');
                 btnNext.classList.add('hidden');
             }
 
